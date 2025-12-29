@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#00000a">
+    <title>2026 元旦快乐 - 秋</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            overflow: hidden;
+            height: 100vh;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            touch-action: manipulation;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #00000a;
+            /* 禁用文字选择，减少性能消耗 */
+            user-select: none;
+        }
+        /* 代码生成轻量化烟花画布 - 最底层 */
+        #fireworksCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+        /* 遮罩层 - 简化模糊，提升性能 */
+        .mask-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            background: rgba(0, 0, 20, 0.4);
+            /* 低模糊半径，减少GPU压力 */
+            backdrop-filter: blur(0.5px);
+        }
+        /* 主标题容器 - 中层 */
+        .title-container {
+            position: relative;
+            z-index: 3;
+            margin-bottom: 20px;
+        }
+        /* 全息流光打字标题 - 简化动画 */
+        .typing-title {
+            font-size: clamp(2.5rem, 13vw, 5rem);
+            font-weight: 800;
+            white-space: nowrap;
+            text-align: center;
+            border-right: 6px solid transparent;
+            background: linear-gradient(
+                90deg,
+                #ff8eff, #ffcb85, #62efff, #b388ff, #ff8eff
+            );
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: 
+                hologramFlow 12s linear infinite, 
+                cursorPulse 2.8s ease-in-out infinite;
+            text-shadow: 
+                0 0 10px rgba(255, 142, 255, 0.3);
+        }
+        /* 高级弹窗容器 - 顶置，减少重绘 */
+        .wish-popup-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 99; 
+            pointer-events: none;
+            overflow: hidden;
+            /* 开启硬件加速 */
+            transform: translateZ(0);
+        }
+        /* 高级弹窗样式 - 简化效果，提升流畅度 */
+        .wish-popup {
+            position: absolute;
+            padding: 14px 24px;
+            border-radius: 16px;
+            font-size: clamp(0.85rem, 3vw, 1.05rem);
+            color: #ffffff;
+            font-weight: 500;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            /* 简化玻璃拟态，降低计算量 */
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(5px);
+            /* 替换渐变描边为纯色描边，减少绘制 */
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            /* 简化阴影 */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            /* 随机旋转 */
+            transform: rotate(var(--rotate-angle)) scale(0.8);
+            /* 简化动画曲线，减少计算 */
+            animation: popupFloat 8s ease-in-out infinite;
+            /* 开启硬件加速 */
+            transform: translateZ(0) rotate(var(--rotate-angle)) scale(0.8);
+        }
+        /* 简化漂浮动画，减少关键帧 */
+        @keyframes popupFloat {
+            0% {
+                opacity: 0;
+                transform: translateZ(0) rotate(var(--rotate-angle)) scale(0.8) translateY(120px);
+            }
+            20% {
+                opacity: 1;
+                transform: translateZ(0) rotate(var(--rotate-angle)) scale(1) translateY(0);
+            }
+            80% {
+                opacity: 1;
+                transform: translateZ(0) rotate(var(--rotate-angle)) scale(1) translateY(-100px);
+            }
+            100% {
+                opacity: 0;
+                transform: translateZ(0) rotate(var(--rotate-angle)) scale(0.8) translateY(-200px);
+            }
+        }
+        /* 简化标题动画 */
+        @keyframes hologramFlow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 300% 50%; }
+        }
+        @keyframes cursorPulse {
+            0%, 100% { border-color: transparent; }
+            50% { border-color: #ffffff; }
+        }
+        /* 右下角署名 */
+        .signature {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 3;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+        }
+        /* 横竖屏适配 */
+        @media (orientation: landscape) {
+            .typing-title {
+                font-size: clamp(2rem, 10vw, 4rem);
+            }
+            .wish-popup {
+                font-size: clamp(0.75rem, 2vw, 0.95rem);
+                padding: 12px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="fireworksCanvas"></canvas>
+    <div class="mask-layer"></div>
+    <div class="wish-popup-container" id="wishPopupContainer"></div>
+    <div class="title-container">
+        <div class="typing-title" id="typingTitle"></div>
+    </div>
+    <div class="signature">ks秋制作</div>
+
+    <script>
+        // ========== 1. 全息打字效果 - 简化逻辑 ==========
+        const titleText = "2026 元旦快乐！";
+        const typingTitle = document.getElementById('typingTitle');
+        let titleIndex = 0;
+
+        function typeTitle() {
+            if (titleIndex < titleText.length) {
+                typingTitle.textContent += titleText[titleIndex];
+                titleIndex++;
+                setTimeout(typeTitle, /[！。，、]/.test(titleText[titleIndex]) ? 800 : 100);
+            }
+        }
+
+        // ========== 2. 精简祝福文案库 - 减少数组长度 ==========
+        const wishTexts = [
+            "新的一年，平安喜乐", "万事胜意，岁岁无忧", "朝朝暮暮，皆是欢喜",
+            "日子滚烫，人间值得", "星河长明，未来可期", "平安顺遂，得偿所愿",
+            "岁岁常欢愉，年年皆胜意", "新年新气象，万事皆如意", "愿你被世界温柔以待",
+            "三餐四季，温柔有趣", "平安喜乐，好事发生", "前路浩浩荡荡，万事尽可期待"
+        ];
+
+        // ========== 3. 弹窗颜色库 - 精简配色 ==========
+        function getRandomPopupColor() {
+            const colorList = ["#ff7eb3", "#ffb37e", "#7eb3ff", "#b37eff"];
+            return colorList[Math.floor(Math.random() * colorList.length)];
+        }
+
+        // ========== 4. 均匀分布算法 - 优化取点逻辑 ==========
+        const gridRows = 4; // 减少行数，降低计算
+        const gridCols = 3; // 减少列数
+        let gridIndex = 0;
+
+        function getUniformPosition() {
+            const canvasWidth = window.innerWidth;
+            const canvasHeight = window.innerHeight;
+            const gridW = canvasWidth / gridCols;
+            const gridH = canvasHeight / gridRows;
+            const col = gridIndex % gridCols;
+            const row = Math.floor(gridIndex % gridRows);
+            gridIndex = (gridIndex + 1) % (gridRows * gridCols);
+            // 固定偏移，减少随机计算
+            const x = col * gridW + 30 + (Math.random() * (gridW - 100));
+            const y = row * gridH + 30 + (Math.random() * (gridH - 80));
+            return { x, y };
+        }
+
+        // ========== 5. 生成弹窗 - 限制数量，减少DOM操作 ==========
+        let popupCount = 0;
+        const maxPopupCount = 12; // 限制最大弹窗数量
+
+        function createWishPopup() {
+            if (popupCount >= maxPopupCount) return; // 超过上限则不生成
+
+            const container = document.getElementById('wishPopupContainer');
+            const popup = document.createElement('div');
+            popup.className = 'wish-popup';
+
+            popup.textContent = wishTexts[Math.floor(Math.random() * wishTexts.length)];
+            const randomRotate = (Math.random() - 0.5) * 8; // 缩小旋转角度
+            popup.style.setProperty('--rotate-angle', `${randomRotate}deg`);
+            
+            const pos = getUniformPosition();
+            popup.style.left = `${pos.x}px`;
+            popup.style.top = `${pos.y}px`;
+            popup.style.animationDelay = `${Math.random() * 4}s`; // 缩短延迟
+
+            container.appendChild(popup);
+            popupCount++;
+
+            // 自动销毁，恢复计数
+            setTimeout(() => {
+                popup.remove();
+                popupCount--;
+            }, 8000); // 缩短生命周期
+        }
+
+        // ========== 6. 批量生成弹窗 - 降低频率 ==========
+        function generateWishPopups() {
+            // 初始生成12个（填满网格）
+            for (let i = 0; i < maxPopupCount; i++) {
+                setTimeout(() => createWishPopup(), i * 500);
+            }
+            // 降低循环频率
+            setInterval(() => {
+                if (popupCount < maxPopupCount) createWishPopup();
+            }, 2000);
+        }
+
+        // ========== 7. 轻量化烟花粒子系统 - 核心性能优化 ==========
+        const canvas = document.getElementById('fireworksCanvas');
+        const ctx = canvas.getContext('2d');
+        let fireworks = [];
+        let particles = [];
+        // 减少烟花和粒子数量
+        const maxFireworks = 3;
+        const maxParticles = 80;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        const random = (min, max) => Math.random() * (max - min) + min;
+
+        // 简化烟花类
+        class Firework {
+            constructor() {
+                this.x = random(50, canvas.width - 50);
+                this.y = canvas.height;
+                this.sy = random(-8, -5); // 减少速度变化
+                this.color = `hsl(${random(0, 360)}, 100%, 60%)`;
+                this.dead = false;
+            }
+            update() {
+                this.y += this.sy;
+                this.sy += 0.05;
+                if (this.sy >= -1) {
+                    this.explode();
+                    this.dead = true;
+                }
+            }
+            explode() {
+                // 限制粒子生成数量
+                const count = Math.min(random(30, 50), maxParticles - particles.length);
+                for (let i = 0; i < count; i++) {
+                    particles.push(new Particle(this.x, this.y, this.color));
+                }
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 1.5, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
+        }
+
+        // 简化粒子类
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.speed = random(2, 4);
+                this.angle = random(0, Math.PI * 2);
+                this.sx = Math.cos(this.angle) * this.speed;
+                this.sy = Math.sin(this.angle) * this.speed;
+                this.alpha = 1;
+                this.decay = random(0.01, 0.02); // 加快消散
+                this.color = color;
+            }
+            update() {
+                this.sy += 0.05;
+                this.x += this.sx;
+                this.y += this.sy;
+                this.alpha -= this.decay;
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 1, 0, Math.PI * 2);
+                ctx.fillStyle = `${this.color}${this.alpha.toFixed(2)}`;
+                ctx.fill();
+            }
+        }
+
+        // 优化动画循环 - 使用requestAnimationFrame，限制绘制逻辑
+        function animateFireworks() {
+            requestAnimationFrame(animateFireworks);
+            // 简化背景清除，降低透明度
+            ctx.fillStyle = 'rgba(0, 0, 10, 0.25)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 限制同时存在的烟花数量
+            if (fireworks.length < maxFireworks && Math.random() < 0.03) {
+                fireworks.push(new Firework());
+            }
+
+            // 反向遍历，减少数组操作
+            for (let i = fireworks.length - 1; i >= 0; i--) {
+                const f = fireworks[i];
+                f.update();
+                f.draw();
+                if (f.dead) fireworks.splice(i, 1);
+            }
+
+            // 限制粒子数量
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.update();
+                p.draw();
+                if (p.alpha <= 0) particles.splice(i, 1);
+            }
+        }
+
+        // ========== 8. 页面初始化 - 延迟启动，避免卡顿 ==========
+        window.addEventListener('load', () => {
+            setTimeout(typeTitle, 300);
+            setTimeout(generateWishPopups, 500);
+            setTimeout(animateFireworks, 800);
+        });
+    </script>
+</body>
+</html>
